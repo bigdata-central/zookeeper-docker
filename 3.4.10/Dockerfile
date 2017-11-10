@@ -1,9 +1,7 @@
-FROM openjdk:8-jre-alpine
+FROM ubuntu:17.04
 
-# Install required packages
-RUN apk add --no-cache \
-    bash \
-    su-exec
+RUN apt-get update && apt-get install -y \
+    openjdk-8-jre gnupg wget dirmngr
 
 ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
@@ -17,7 +15,7 @@ ENV ZOO_USER=zookeeper \
 
 # Add a user and make dirs
 RUN set -ex; \
-    adduser -D "$ZOO_USER"; \
+    adduser --disabled-login --gecos " " "$ZOO_USER"; \
     mkdir -p "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR"; \
     chown "$ZOO_USER:$ZOO_USER" "$ZOO_DATA_LOG_DIR" "$ZOO_DATA_DIR" "$ZOO_CONF_DIR"
 
@@ -26,10 +24,6 @@ ARG DISTRO_NAME=zookeeper-3.4.10
 
 # Download Apache Zookeeper, verify its PGP signature, untar and clean up
 RUN set -ex; \
-    apk add --no-cache --virtual .build-deps \
-        ca-certificates \
-        gnupg \
-        libressl; \
     wget -q "https://www.apache.org/dist/zookeeper/$DISTRO_NAME/$DISTRO_NAME.tar.gz"; \
     wget -q "https://www.apache.org/dist/zookeeper/$DISTRO_NAME/$DISTRO_NAME.tar.gz.asc"; \
     export GNUPGHOME="$(mktemp -d)"; \
@@ -39,8 +33,7 @@ RUN set -ex; \
     gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz"; \
     tar -xzf "$DISTRO_NAME.tar.gz"; \
     mv "$DISTRO_NAME/conf/"* "$ZOO_CONF_DIR"; \
-    rm -rf "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc"; \
-    apk del .build-deps
+    rm -rf "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc"; 
 
 WORKDIR $DISTRO_NAME
 VOLUME ["$ZOO_DATA_DIR", "$ZOO_DATA_LOG_DIR"]
@@ -50,6 +43,7 @@ EXPOSE $ZOO_PORT 2888 3888
 ENV PATH=$PATH:/$DISTRO_NAME/bin \
     ZOOCFGDIR=$ZOO_CONF_DIR
 
-COPY docker-entrypoint.sh /
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["zkServer.sh", "start-foreground"]
