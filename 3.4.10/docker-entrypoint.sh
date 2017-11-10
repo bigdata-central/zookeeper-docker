@@ -5,7 +5,8 @@ set -e
 # Allow the container to be started with `--user`
 if [[ "$1" = 'zkServer.sh' && "$(id -u)" = '0' ]]; then
     chown -R "$ZOO_USER" "$ZOO_DATA_DIR" "$ZOO_DATA_LOG_DIR"
-    exec su-exec "$ZOO_USER" "$0" "$@"
+    #exec su-exec "$ZOO_USER" "$0" "$@"
+    su -c "$0" "$ZOO_USER" "$@"
 fi
 
 # Generate the config only if it doesn't exist
