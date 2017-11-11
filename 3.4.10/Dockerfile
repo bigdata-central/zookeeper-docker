@@ -2,8 +2,8 @@ FROM openjdk:8-jre-alpine
 
 # Install required packages
 RUN apk add --no-cache \
-    bash \
-    su-exec
+    bash 
+    #su-exec
 
 ENV ZOO_USER=zookeeper \
     ZOO_CONF_DIR=/conf \
